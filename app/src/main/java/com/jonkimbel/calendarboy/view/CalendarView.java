@@ -18,9 +18,9 @@ import androidx.annotation.Nullable;
 
 public class CalendarView extends View {
     // Color.
-    private Paint dividerColor;
-    private Paint contentColor;
-    private Paint backgroundColor;
+    private final Paint dividerColor;
+    private final Paint contentColor;
+    private final Paint backgroundColor;
 
     // Layout.
     private RectF containerRect;
@@ -69,7 +69,7 @@ public class CalendarView extends View {
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    protected void onSizeChanged(int w, int h, int oldW, int oldH) {
         float right = (float) (w - (getPaddingLeft() + getPaddingRight()));
         float bottom = (float) (h - (getPaddingTop() + getPaddingBottom()));
 

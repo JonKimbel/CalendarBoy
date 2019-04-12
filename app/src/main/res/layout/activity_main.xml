@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:custom="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,7 +9,7 @@
     <com.jonkimbel.calendarboy.view.CalendarView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        custom:calendarCornerRadius="30dp"
-        custom:backgroundColor="#FF00FF" />
+        app:calendarCornerRadius="30dp"
+        app:backgroundColor="#FF00FF" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
