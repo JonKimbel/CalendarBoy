@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CalendarView">
+        <attr name="backgroundColor" format="color" />
+        <attr name="dividerColor" format="color" />
+        <attr name="contentColor" format="color" />
+        <attr name="calendarCornerRadius" format="dimension" />
+        <attr name="contentCornerRadius" format="dimension" />
+    </declare-styleable>
+</resources>

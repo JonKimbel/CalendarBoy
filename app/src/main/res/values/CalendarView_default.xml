@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="CalendarView_defaultBackgroundColor">#FFFFFF</color>
+    <color name="CalendarView_defaultDividerColor">#33000000</color>
+    <color name="CalendarView_defaultContentColor">#3F51B5</color>
+    <dimen name="CalendarView_defaultCalendarCornerRadius">4dp</dimen>
+    <dimen name="CalendarView_defaultContentCornerRadius">4dp</dimen>
+</resources>
