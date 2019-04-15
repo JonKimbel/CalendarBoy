@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -17,11 +19,13 @@ import com.jonkimbel.calendarboy.model.Event;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
@@ -34,6 +38,10 @@ public class CalendarView extends View {
     private float backgroundRadius;
 
     private final Paint dividerStroke;
+    private float dividerStrokeWidth;
+    private float dividerDashOnDistance;
+    private float dividerDashOffDistance;
+    private float dividerDashPhase;
 
     private final Paint contentColor;
     private final Paint contentStroke;
@@ -46,6 +54,7 @@ public class CalendarView extends View {
     // Calculated layout.
     private RectF containerRect;
     private List<RectF> contentRects = new ArrayList<>();
+    private List<Float> dividerLineYPositions = new ArrayList<>();
 
     // Input.
     private boolean hasBeenTouched = false;
@@ -89,6 +98,18 @@ public class CalendarView extends View {
             dividerStroke.setColor(attrs.getColor(
                     R.styleable.CalendarView_dividerStroke,
                     res.getColor(R.color.CalendarView_defaultDividerStroke)));
+            dividerStrokeWidth = attrs.getDimension(
+                    R.styleable.CalendarView_dividerStrokeWidth,
+                    res.getDimension(R.dimen.CalendarView_defaultDividerStrokeWidth));
+            dividerDashOnDistance = attrs.getDimension(
+                    R.styleable.CalendarView_dividerDashOnDistance,
+                    res.getDimension(R.dimen.CalendarView_defaultDividerDashOnDistance));
+            dividerDashOffDistance = attrs.getDimension(
+                    R.styleable.CalendarView_dividerDashOffDistance,
+                    res.getDimension(R.dimen.CalendarView_defaultDividerDashOffDistance));
+            dividerStroke.setStrokeWidth(dividerStrokeWidth);
+            dividerStroke.setPathEffect(new DashPathEffect(
+                    new float[]{dividerDashOnDistance, dividerDashOffDistance}, 0));
 
             contentColor.setColor(attrs.getColor(
                     R.styleable.CalendarView_contentFill,
@@ -105,8 +126,11 @@ public class CalendarView extends View {
         } finally {
             attrs.recycle();
         }
+    }
 
-        contentRects.add(new RectF());
+    private float calculateDashPhase() {
+        // TODO: figure out what exactly dash phase means, it seems to not work as advertised.
+        return containerRect.width() % (dividerDashOnDistance + dividerDashOffDistance) / 2;
     }
 
     @Override
@@ -117,12 +141,19 @@ public class CalendarView extends View {
         containerRect = new RectF(
                 getPaddingLeft(), getPaddingTop(),
                 right, bottom);
+
+        dividerStroke.setPathEffect(new DashPathEffect(
+                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawRoundRect(
                 containerRect, backgroundRadius, backgroundRadius, backgroundColor);
+        for (Float dividerLineYPosition : dividerLineYPositions) {
+            canvas.drawLine(containerRect.left, dividerLineYPosition, containerRect.right,
+                    dividerLineYPosition, dividerStroke);
+        }
         canvas.drawRoundRect(containerRect, backgroundRadius, backgroundRadius, backgroundStroke);
         for (RectF contentRect : contentRects) {
             Log.d("CalendarView", String.format("drawing rect: %f, %f, %f, %f",
@@ -189,6 +220,29 @@ public class CalendarView extends View {
         requestLayout();
     }
 
+    public void setDividerStrokeWidth(float dividerStrokeWidth) {
+        this.dividerStrokeWidth = dividerStrokeWidth;
+        dividerStroke.setStrokeWidth(dividerStrokeWidth);
+        invalidate();
+        requestLayout();
+    }
+
+    public void setDividerDashOnDistance(float dividerDashOnDistance) {
+        this.dividerDashOnDistance = dividerDashOnDistance;
+        dividerStroke.setPathEffect(new DashPathEffect(
+                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
+        invalidate();
+        requestLayout();
+    }
+
+    public void setDividerDashOffDistance(float dividerDashOffDistance) {
+        this.dividerDashOffDistance = dividerDashOffDistance;
+        dividerStroke.setPathEffect(new DashPathEffect(
+                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
+        invalidate();
+        requestLayout();
+    }
+
     public void setContentColor(@ColorInt int contentColor) {
         this.contentColor.setColor(contentColor);
         invalidate();
@@ -215,6 +269,7 @@ public class CalendarView extends View {
 
     private void updateContentLayout() {
         List<RectF> newContentRects = new ArrayList<>();
+        List<Float> newDividerLineYPositions = new ArrayList<>();
         if (data.size() > 0) {
             long minTimeMillis = Math.max(data.get(0).getStartTimeMillis(), minTimeToDisplay);
             long maxTimeMillis = Math.min(data.get(0).getEndTimeMillis(), maxTimeToDisplay);
@@ -298,9 +353,25 @@ public class CalendarView extends View {
                                 (finalRep.data.getEndTimeMillis() - finalRep.data.getStartTimeMillis());
                 newContentRects.add(new RectF(left, top, right, bottom));
             }
+
+            ZonedDateTime firstDividerTime =
+                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(minTimeMillis),
+                            ZoneId.systemDefault()).truncatedTo(ChronoUnit.HOURS).plusHours(1);
+            ZonedDateTime lastDividerTime =
+                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(maxTimeMillis),
+                            ZoneId.systemDefault()).truncatedTo(ChronoUnit.HOURS);
+
+            for (long seconds = firstDividerTime.toEpochSecond();
+                 seconds < lastDividerTime.toEpochSecond();
+                 seconds += TimeUnit.HOURS.toSeconds(1)) {
+                float yPosition = containerRect.top + contentPadding +
+                        pxHeightPerMillisecond * (TimeUnit.SECONDS.toMillis(seconds) - minTimeMillis);
+                newDividerLineYPositions.add(yPosition);
+            }
         }
         Log.d("CalendarView", Integer.toString(newContentRects.size()));
         this.contentRects = newContentRects;
+        this.dividerLineYPositions = newDividerLineYPositions;
     }
 
     private static class IntermediateRep {
