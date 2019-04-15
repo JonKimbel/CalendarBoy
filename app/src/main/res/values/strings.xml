@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">CalendarBoy</string>
+    <string name="android_m_account_selection_dialog">Select the account containing the calendar
+        you\'d like to analyze</string>
+    <string name="accounts_permission_denied">The accounts permission is required to inspect your
+        calendar.</string>
+    <string name="calendar_permission_denied">The calendar permission is required to show your
+        calendar.</string>
+    <string name="title_activity_calendar_selection">CalendarSelectionActivity</string>
+    <string name="placeholder_text">Hewwo</string>
+    <string name="calendar_list_item_select_button">SELECT</string>
 </resources>

@@ -7,9 +7,9 @@
     tools:context=".MainActivity">
 
     <com.jonkimbel.calendarboy.view.CalendarView
+        android:id="@+id/calendar_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:calendarCornerRadius="30dp"
-        app:backgroundColor="#FF00FF" />
+        android:layout_margin="8dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

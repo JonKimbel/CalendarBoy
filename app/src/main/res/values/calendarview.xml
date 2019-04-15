@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CalendarView">
+        <attr name="backgroundFill" format="color" />
+        <attr name="backgroundStroke" format="color" />
+        <attr name="backgroundRadius" format="dimension" />
+
+        <attr name="dividerStroke" format="color" />
+
+        <attr name="contentFill" format="color" />
+        <attr name="contentStroke" format="color" />
+        <attr name="contentRadius" format="dimension" />
+        <attr name="contentPadding" format="dimension" />
+    </declare-styleable>
+
+    <color name="CalendarView_defaultBackgroundFill">#FFFFFF</color>
+    <color name="CalendarView_defaultBackgroundStroke">#55000000</color>
+    <dimen name="CalendarView_defaultBackgroundRadius">4dp</dimen>
+
+    <color name="CalendarView_defaultDividerStroke">#33000000</color>
+
+    <color name="CalendarView_defaultContentFill">#3F51B5</color>
+    <color name="CalendarView_defaultContentStroke">#55000000</color>
+    <dimen name="CalendarView_defaultContentRadius">4dp</dimen>
+    <dimen name="CalendarView_defaultContentPadding">4dp</dimen>
+</resources>
