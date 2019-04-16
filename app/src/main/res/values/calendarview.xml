@@ -10,6 +10,11 @@
         <attr name="dividerDashOnDistance" format="dimension" />
         <attr name="dividerDashOffDistance" format="dimension" />
 
+        <attr name="highlightStroke" format="color" />
+        <attr name="highlightStrokeWidth" format="dimension" />
+        <attr name="highlightDashOnDistance" format="dimension" />
+        <attr name="highlightDashOffDistance" format="dimension" />
+
         <attr name="contentFill" format="color" />
         <attr name="contentStroke" format="color" />
         <attr name="contentRadius" format="dimension" />
@@ -27,6 +32,11 @@
     <dimen name="CalendarView_defaultDividerStrokeWidth">0.75dp</dimen>
     <dimen name="CalendarView_defaultDividerDashOnDistance">8dp</dimen>
     <dimen name="CalendarView_defaultDividerDashOffDistance">8dp</dimen>
+
+    <color name="CalendarView_defaultHighlightStroke">#BB00AA90</color>
+    <dimen name="CalendarView_defaultHighlightStrokeWidth">2dp</dimen>
+    <dimen name="CalendarView_defaultHighlightDashOnDistance">8dp</dimen>
+    <dimen name="CalendarView_defaultHighlightDashOffDistance">0dp</dimen>
 
     <color name="CalendarView_defaultContentFill">#3F51B5</color>
     <color name="CalendarView_defaultContentStroke">#55000000</color>

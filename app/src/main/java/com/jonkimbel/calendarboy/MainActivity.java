@@ -2,8 +2,10 @@ package com.jonkimbel.calendarboy;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.jonkimbel.calendarboy.input.AccountSelectionController;
 import com.jonkimbel.calendarboy.input.CalendarSelectionController;
@@ -25,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
     private List<SelectionController> selectionControllers = new ArrayList<>();
     private EventDataController eventDataController;
     private CalendarView calendarView;
+    private FloatingActionButton fab;
+    private List<Event> events;
+    private int focusedEventIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +56,25 @@ public class MainActivity extends AppCompatActivity {
                 calendarSelectionController, getContentResolver(), accountSelectionController);
 
         calendarView = findViewById(R.id.calendar_view);
+        fab = findViewById(R.id.fab);
+        fab.setOnClickListener(view -> {
+            if (events == null) {
+                return;
+            }
+
+            if (focusedEventIndex < 0) {
+                focusedEventIndex = 0;
+            } else {
+                focusedEventIndex++;
+                if (focusedEventIndex >= events.size()) {
+                    focusedEventIndex = 0;
+                }
+            }
+
+            calendarView.zoomTo(
+                    events.get(focusedEventIndex).getStartTimeMillis(),
+                    events.get(focusedEventIndex).getEndTimeMillis());
+        });
     }
 
     @Override
@@ -60,7 +84,8 @@ public class MainActivity extends AppCompatActivity {
         calendarDataFuture.addListener(
                 () -> {
                     try {
-                        calendarView.setData(calendarDataFuture.get());
+                        events = calendarDataFuture.get();
+                        calendarView.setData(events);
                     } catch (ExecutionException | InterruptedException e) {
                         e.printStackTrace();
                     }

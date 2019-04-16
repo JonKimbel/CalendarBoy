@@ -43,6 +43,12 @@ public class CalendarView extends View {
     private float dividerDashOffDistancePx;
     private float dividerDashPhase;
 
+    private final Paint highlightStroke;
+    private float highlightStrokeWidthPx;
+    private float highlightDashOnDistancePx;
+    private float highlightDashOffDistancePx;
+    private float highlightDashPhase;
+
     private final Paint contentColor;
     private final Paint contentStroke;
     private float contentRadiusPx;
@@ -52,19 +58,20 @@ public class CalendarView extends View {
     private float textSizePx;
 
     // Data.
-    private List<Event> data;
+    private List<Event> data = new ArrayList<>();
+    private Long zoomStartTimeMillis = null;
+    private Long zoomEndTimeMillis = null;
 
     // Calculated layout.
     private RectF containerRect;
     private List<DrawableEvent> drawableEvents = new ArrayList<>();
     private List<Float> dividerLineYPositions = new ArrayList<>();
+    private List<Float> highlightLineYPositions = new ArrayList<>();
 
     // Input.
     private boolean hasBeenTouched = false;
     private float previousTouchX = -1;
     private float previousTouchY = -1;
-    private long maxTimeToDisplay;
-    private long minTimeToDisplay;
 
     public CalendarView(Context context, @Nullable AttributeSet untypedAttrs) {
         super(context, untypedAttrs);
@@ -76,6 +83,9 @@ public class CalendarView extends View {
 
         dividerStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         dividerStroke.setStyle(Paint.Style.STROKE);
+
+        highlightStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+        highlightStroke.setStyle(Paint.Style.STROKE);
 
         contentColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         contentColor.setStyle(Paint.Style.FILL);
@@ -117,6 +127,22 @@ public class CalendarView extends View {
             dividerStroke.setPathEffect(new DashPathEffect(
                     new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx}, 0));
 
+            highlightStroke.setColor(attrs.getColor(
+                    R.styleable.CalendarView_highlightStroke,
+                    res.getColor(R.color.CalendarView_defaultHighlightStroke)));
+            highlightStrokeWidthPx = attrs.getDimension(
+                    R.styleable.CalendarView_highlightStrokeWidth,
+                    res.getDimension(R.dimen.CalendarView_defaultHighlightStrokeWidth));
+            highlightDashOnDistancePx= attrs.getDimension(
+                    R.styleable.CalendarView_highlightDashOnDistance,
+                    res.getDimension(R.dimen.CalendarView_defaultHighlightDashOnDistance));
+            highlightDashOffDistancePx = attrs.getDimension(
+                    R.styleable.CalendarView_highlightDashOffDistance,
+                    res.getDimension(R.dimen.CalendarView_defaultHighlightDashOffDistance));
+            highlightStroke.setStrokeWidth(highlightStrokeWidthPx);
+            highlightStroke.setPathEffect(new DashPathEffect(
+                    new float[]{highlightDashOnDistancePx, highlightDashOffDistancePx}, 0));
+
             contentColor.setColor(attrs.getColor(
                     R.styleable.CalendarView_contentFill,
                     res.getColor(R.color.CalendarView_defaultContentFill)));
@@ -153,6 +179,10 @@ public class CalendarView extends View {
         dividerStroke.setPathEffect(new DashPathEffect(
                 new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx},
                 calculateDashPhase()));
+
+        // TODO: recalculate phase for highlight stroke.
+
+        updateContentLayout();
     }
 
     @Override
@@ -160,8 +190,9 @@ public class CalendarView extends View {
         canvas.drawRoundRect(
                 containerRect, backgroundRadiusPx, backgroundRadiusPx, backgroundColor);
         for (Float dividerLineYPosition : dividerLineYPositions) {
-            canvas.drawLine(containerRect.left, dividerLineYPosition, containerRect.right,
-                    dividerLineYPosition, dividerStroke);
+            canvas.drawLine(containerRect.left, dividerLineYPosition,
+                    containerRect.right, dividerLineYPosition,
+                    dividerStroke);
         }
         canvas.drawRoundRect(containerRect, backgroundRadiusPx, backgroundRadiusPx,
                 backgroundStroke);
@@ -183,6 +214,12 @@ public class CalendarView extends View {
                 canvas.drawText(breakPoint.textLine, 0, breakPoint.textLine.length(),
                         breakPoint.xPosition, breakPoint.yPosition, textColor);
             }
+        }
+
+        for (Float highlightLineYPosition : highlightLineYPositions) {
+            canvas.drawLine(containerRect.left, highlightLineYPosition,
+                    containerRect.right, highlightLineYPosition,
+                    highlightStroke);
         }
     }
 
@@ -212,6 +249,9 @@ public class CalendarView extends View {
         return true;
     }
 
+    // Consider implementing onMeasure:
+    // https://developer.android.com/training/custom-views/custom-drawing#layouteevent
+
     public void setBackgroundColor(@ColorInt int backgroundColor) {
         this.backgroundColor.setColor(backgroundColor);
         invalidate();
@@ -219,13 +259,23 @@ public class CalendarView extends View {
     }
 
     public void setData(List<Event> data) {
-        ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
-        ZonedDateTime todayStart = now.toLocalDate().atStartOfDay(ZoneId.systemDefault());
-        ZonedDateTime todayEnd = todayStart.plusDays(1).minusNanos(1000);
-
-        this.minTimeToDisplay = todayStart.toEpochSecond() * 1000;
-        this.maxTimeToDisplay = todayEnd.toEpochSecond() * 1000;
         this.data = data;
+        updateContentLayout();
+        invalidate();
+        requestLayout();
+    }
+
+    public void zoomTo(long startTimeMillis, long endTimeMillis) {
+        this.zoomStartTimeMillis = startTimeMillis;
+        this.zoomEndTimeMillis = endTimeMillis;
+        updateContentLayout();
+        invalidate();
+        requestLayout();
+    }
+
+    public void clearZoom() {
+        this.zoomStartTimeMillis = null;
+        this.zoomEndTimeMillis = null;
         updateContentLayout();
         invalidate();
         requestLayout();
@@ -245,9 +295,6 @@ public class CalendarView extends View {
         requestLayout();
     }
 
-    // Consider implementing onMeasure:
-    // https://developer.android.com/training/custom-views/custom-drawing#layouteevent
-
     public void setDividerDashOnDistanceDp(float dividerDashOnDistanceDp) {
         this.dividerDashOnDistancePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 dividerDashOnDistanceDp, getResources().getDisplayMetrics());
@@ -263,6 +310,40 @@ public class CalendarView extends View {
                 dividerDashOffDistanceDp, getResources().getDisplayMetrics());
         dividerStroke.setPathEffect(new DashPathEffect(
                 new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx},
+                calculateDashPhase()));
+        invalidate();
+        requestLayout();
+    }
+
+    public void setHighlightStroke(@ColorInt int highlightStroke) {
+        this.highlightStroke.setColor(highlightStroke);
+        invalidate();
+        requestLayout();
+    }
+
+    public void setHighlightStrokeWidthDp(float highlightStrokeWidthDp) {
+        this.highlightStrokeWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                highlightStrokeWidthDp, getResources().getDisplayMetrics());
+        highlightStroke.setStrokeWidth(highlightStrokeWidthPx);
+        invalidate();
+        requestLayout();
+    }
+
+    public void setHighlightDashOnDistanceDp(float highlightDashOnDistanceDp) {
+        this.highlightDashOnDistancePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                highlightDashOnDistanceDp, getResources().getDisplayMetrics());
+        highlightStroke.setPathEffect(new DashPathEffect(
+                new float[]{highlightDashOnDistancePx, highlightDashOffDistancePx},
+                calculateDashPhase()));
+        invalidate();
+        requestLayout();
+    }
+
+    public void setHighlightDashOffDistanceDp(float highlightDashOffDistanceDp) {
+        this.highlightDashOffDistancePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                highlightDashOffDistanceDp, getResources().getDisplayMetrics());
+        highlightStroke.setPathEffect(new DashPathEffect(
+                new float[]{highlightDashOnDistancePx, highlightDashOffDistancePx},
                 calculateDashPhase()));
         invalidate();
         requestLayout();
@@ -311,6 +392,7 @@ public class CalendarView extends View {
 
     private float calculateDashPhase() {
         // TODO: figure out what exactly dash phase means, it seems to not work as advertised.
+        // TODO: make a version of this for highlight stroke.
         return containerRect.width() % (dividerDashOnDistancePx + dividerDashOffDistancePx) / 2;
     }
 
@@ -337,8 +419,26 @@ public class CalendarView extends View {
     }
 
     private void updateContentLayout() {
+        ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+        ZonedDateTime todayStart = now.toLocalDate().atStartOfDay(ZoneId.systemDefault());
+        ZonedDateTime todayEnd = todayStart.plusDays(1).minusNanos(1000);
+
+        long minTimeToDisplay = todayStart.toEpochSecond() * 1000;
+        long maxTimeToDisplay = todayEnd.toEpochSecond() * 1000;
+
+        if (zoomStartTimeMillis != null && zoomEndTimeMillis != null) {
+            long amountToPadZoomTimes = (zoomEndTimeMillis - zoomStartTimeMillis) / 4;
+            minTimeToDisplay = Math.max(minTimeToDisplay,
+                    zoomStartTimeMillis - amountToPadZoomTimes);
+            maxTimeToDisplay = Math.min(maxTimeToDisplay,
+                    zoomEndTimeMillis + amountToPadZoomTimes);
+        }
+        Log.d("CalendarView", String.format("minTimeToDisplay: %s, maxTimeToDisplay: %s",
+                minTimeToDisplay, maxTimeToDisplay));
+
         List<DrawableEvent> newDrawableEvents = new ArrayList<>();
         List<Float> newDividerLineYPositions = new ArrayList<>();
+        List<Float> newHighlightLineYPositions = new ArrayList<>();
         if (data.size() > 0) {
             long minTimeMillis = Math.max(data.get(0).getStartTimeMillis(), minTimeToDisplay);
             long maxTimeMillis = Math.min(data.get(0).getEndTimeMillis(), maxTimeToDisplay);
@@ -349,6 +449,11 @@ public class CalendarView extends View {
             // to figure out how many columns to render.
             {
                 for (Event entry : data) {
+                    if (entry.getEndTimeMillis() <= minTimeToDisplay ||
+                            entry.getStartTimeMillis() >= maxTimeToDisplay) {
+                        continue;
+                    }
+
                     long cappedStartTime = entry.getStartTimeMillis() < minTimeToDisplay ?
                             minTimeToDisplay : entry.getStartTimeMillis();
                     long cappedEndTime = entry.getEndTimeMillis() > maxTimeToDisplay ?
@@ -359,10 +464,22 @@ public class CalendarView extends View {
                     if (cappedEndTime > maxTimeMillis) {
                         maxTimeMillis = cappedEndTime;
                     }
+                    Log.d("CalendarView",
+                            String.format("title: %s, cappedStartTime: %s, cappedEndTime: %s",
+                            entry.getTitle(), cappedStartTime, cappedEndTime));
                     intermediateReps.add(new IntermediateRep(true, cappedStartTime, entry));
                     intermediateReps.add(new IntermediateRep(false, cappedEndTime, entry));
                 }
                 Preconditions.checkState(maxTimeMillis > minTimeMillis);
+                Preconditions.checkState(intermediateReps.size() % 2 == 0);
+            }
+
+            long timeAtTopOfContainer = minTimeMillis;
+            long timeAtBottomOfContainer = maxTimeMillis;
+
+            if (zoomStartTimeMillis != null && zoomEndTimeMillis != null) {
+                timeAtTopOfContainer = minTimeToDisplay;
+                timeAtBottomOfContainer = maxTimeToDisplay;
             }
 
             List<FinalRep> finalRepresentations = new ArrayList<>();
@@ -371,8 +488,10 @@ public class CalendarView extends View {
             // Figure out how many columns to render.
             {
                 Collections.sort(intermediateReps, IntermediateRep::compare);
+                Preconditions.checkState(intermediateReps.size() % 2 == 0);
                 int currentSimultaneousColumns = 0;
                 Map<Event, FinalRep> currentEvents = new HashMap<>();
+                Log.d("CalendarView", "WOAHWOAHWOAH");
                 for (IntermediateRep entry : intermediateReps) {
                     if (entry.increased) {
                         currentSimultaneousColumns++;
@@ -380,6 +499,7 @@ public class CalendarView extends View {
                         FinalRep finalRep = new FinalRep(
                                 entry.data, currentSimultaneousColumns - 1);
                         finalRepresentations.add(finalRep);
+                        Log.d("CalendarView", String.format("put: %s", entry.data.getTitle()));
                         currentEvents.put(entry.data, finalRep);
                         if (currentSimultaneousColumns > columnsToRender) {
                             columnsToRender = currentSimultaneousColumns;
@@ -391,6 +511,7 @@ public class CalendarView extends View {
                             }
                         }
                     } else {
+                        Log.d("CalendarView", String.format("remove: %s", entry.data.getTitle()));
                         currentEvents.remove(entry.data);
                         currentSimultaneousColumns--;
                     }
@@ -402,7 +523,7 @@ public class CalendarView extends View {
 
             float pxHeightPerMillisecond =
                     (containerRect.height() - 2 * contentPaddingPx)
-                            / (maxTimeMillis - minTimeMillis);
+                            / (timeAtBottomOfContainer - timeAtTopOfContainer);
             float[] pxWidthPerNumOtherColumns = new float[columnsToRender];
             for (int i = 0; i < columnsToRender; i++) {
                 pxWidthPerNumOtherColumns[i] =
@@ -415,7 +536,7 @@ public class CalendarView extends View {
                         (pxWidthPerNumOtherColumns[finalRep.numColumns - 1] + contentPaddingPx) *
                                 finalRep.columnPosition;
                 float top = containerRect.top + contentPaddingPx +
-                        pxHeightPerMillisecond * (finalRep.data.getStartTimeMillis() - minTimeMillis);
+                        pxHeightPerMillisecond * (finalRep.data.getStartTimeMillis() - timeAtTopOfContainer);
                 float right = left + pxWidthPerNumOtherColumns[finalRep.numColumns - 1];
                 float bottom = top +
                         pxHeightPerMillisecond *
@@ -425,23 +546,34 @@ public class CalendarView extends View {
             }
 
             ZonedDateTime firstDividerTime =
-                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(minTimeMillis),
+                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(timeAtTopOfContainer),
                             ZoneId.systemDefault()).truncatedTo(ChronoUnit.HOURS).plusHours(1);
             ZonedDateTime lastDividerTime =
-                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(maxTimeMillis),
+                    ZonedDateTime.ofInstant(Instant.ofEpochMilli(timeAtBottomOfContainer),
                             ZoneId.systemDefault()).truncatedTo(ChronoUnit.HOURS);
 
             for (long seconds = firstDividerTime.toEpochSecond();
                  seconds < lastDividerTime.toEpochSecond();
                  seconds += TimeUnit.HOURS.toSeconds(1)) {
                 float yPosition = containerRect.top + contentPaddingPx +
-                        pxHeightPerMillisecond * (TimeUnit.SECONDS.toMillis(seconds) - minTimeMillis);
+                        pxHeightPerMillisecond * (TimeUnit.SECONDS.toMillis(seconds) - timeAtTopOfContainer);
                 newDividerLineYPositions.add(yPosition);
+            }
+
+            if (zoomStartTimeMillis != null && zoomEndTimeMillis != null) {
+                float topHighlightYPosition = containerRect.top + contentPaddingPx +
+                        pxHeightPerMillisecond * (zoomStartTimeMillis - timeAtTopOfContainer);
+                newHighlightLineYPositions.add(topHighlightYPosition);
+
+                float bottomHighlightYPosition = containerRect.top + contentPaddingPx +
+                        pxHeightPerMillisecond * (zoomEndTimeMillis - timeAtTopOfContainer);
+                newHighlightLineYPositions.add(bottomHighlightYPosition);
             }
         }
         Log.d("CalendarView", Integer.toString(newDrawableEvents.size()));
         this.drawableEvents = newDrawableEvents;
         this.dividerLineYPositions = newDividerLineYPositions;
+        this.highlightLineYPositions = newHighlightLineYPositions;
     }
 
     private static class TextBreakPoint {
