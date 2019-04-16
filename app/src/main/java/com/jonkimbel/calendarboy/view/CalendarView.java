@@ -35,18 +35,21 @@ public class CalendarView extends View {
     // Attributes defined via XML.
     private final Paint backgroundColor;
     private final Paint backgroundStroke;
-    private float backgroundRadius;
+    private float backgroundRadiusPx;
 
     private final Paint dividerStroke;
-    private float dividerStrokeWidth;
-    private float dividerDashOnDistance;
-    private float dividerDashOffDistance;
+    private float dividerStrokeWidthPx;
+    private float dividerDashOnDistancePx;
+    private float dividerDashOffDistancePx;
     private float dividerDashPhase;
 
     private final Paint contentColor;
     private final Paint contentStroke;
-    private float contentRadius;
-    private float contentPadding;
+    private float contentRadiusPx;
+    private float contentPaddingPx;
+
+    private final Paint textColor;
+    private float textSizePx;
 
     // Data.
     private List<Event> data;
@@ -79,6 +82,9 @@ public class CalendarView extends View {
         contentStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         contentStroke.setStyle(Paint.Style.STROKE);
 
+        textColor = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textColor.setStyle(Paint.Style.FILL);
+
         TypedArray attrs = context.getTheme().obtainStyledAttributes(
                 untypedAttrs,
                 R.styleable.CalendarView,
@@ -91,25 +97,25 @@ public class CalendarView extends View {
             backgroundStroke.setColor(attrs.getColor(
                     R.styleable.CalendarView_backgroundStroke,
                     res.getColor(R.color.CalendarView_defaultBackgroundStroke)));
-            backgroundRadius = attrs.getDimension(
+            backgroundRadiusPx = attrs.getDimension(
                     R.styleable.CalendarView_backgroundRadius,
                     res.getDimension(R.dimen.CalendarView_defaultBackgroundRadius));
 
             dividerStroke.setColor(attrs.getColor(
                     R.styleable.CalendarView_dividerStroke,
                     res.getColor(R.color.CalendarView_defaultDividerStroke)));
-            dividerStrokeWidth = attrs.getDimension(
+            dividerStrokeWidthPx = attrs.getDimension(
                     R.styleable.CalendarView_dividerStrokeWidth,
                     res.getDimension(R.dimen.CalendarView_defaultDividerStrokeWidth));
-            dividerDashOnDistance = attrs.getDimension(
+            dividerDashOnDistancePx = attrs.getDimension(
                     R.styleable.CalendarView_dividerDashOnDistance,
                     res.getDimension(R.dimen.CalendarView_defaultDividerDashOnDistance));
-            dividerDashOffDistance = attrs.getDimension(
+            dividerDashOffDistancePx = attrs.getDimension(
                     R.styleable.CalendarView_dividerDashOffDistance,
                     res.getDimension(R.dimen.CalendarView_defaultDividerDashOffDistance));
-            dividerStroke.setStrokeWidth(dividerStrokeWidth);
+            dividerStroke.setStrokeWidth(dividerStrokeWidthPx);
             dividerStroke.setPathEffect(new DashPathEffect(
-                    new float[]{dividerDashOnDistance, dividerDashOffDistance}, 0));
+                    new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx}, 0));
 
             contentColor.setColor(attrs.getColor(
                     R.styleable.CalendarView_contentFill,
@@ -117,20 +123,22 @@ public class CalendarView extends View {
             contentStroke.setColor(attrs.getColor(
                     R.styleable.CalendarView_contentStroke,
                     res.getColor(R.color.CalendarView_defaultContentStroke)));
-            contentRadius = attrs.getDimension(
+            contentRadiusPx = attrs.getDimension(
                     R.styleable.CalendarView_contentRadius,
                     res.getDimension(R.dimen.CalendarView_defaultContentRadius));
-            contentPadding = attrs.getDimension(
+            contentPaddingPx = attrs.getDimension(
                     R.styleable.CalendarView_contentPadding,
                     res.getDimension(R.dimen.CalendarView_defaultContentPadding));
+
+            textColor.setColor(attrs.getColor(
+                    R.styleable.CalendarView_textFill,
+                    res.getColor(R.color.CalendarView_defaultTextFill)));
+            textSizePx = attrs.getDimension(R.styleable.CalendarView_textSize,
+                    res.getDimension(R.dimen.CalendarView_defaultTextSize));
+            textColor.setTextSize(textSizePx);
         } finally {
             attrs.recycle();
         }
-    }
-
-    private float calculateDashPhase() {
-        // TODO: figure out what exactly dash phase means, it seems to not work as advertised.
-        return containerRect.width() % (dividerDashOnDistance + dividerDashOffDistance) / 2;
     }
 
     @Override
@@ -143,26 +151,38 @@ public class CalendarView extends View {
                 right, bottom);
 
         dividerStroke.setPathEffect(new DashPathEffect(
-                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
+                new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx},
+                calculateDashPhase()));
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawRoundRect(
-                containerRect, backgroundRadius, backgroundRadius, backgroundColor);
+                containerRect, backgroundRadiusPx, backgroundRadiusPx, backgroundColor);
         for (Float dividerLineYPosition : dividerLineYPositions) {
             canvas.drawLine(containerRect.left, dividerLineYPosition, containerRect.right,
                     dividerLineYPosition, dividerStroke);
         }
-        canvas.drawRoundRect(containerRect, backgroundRadius, backgroundRadius, backgroundStroke);
+        canvas.drawRoundRect(containerRect, backgroundRadiusPx, backgroundRadiusPx,
+                backgroundStroke);
         for (RectF contentRect : contentRects) {
             Log.d("CalendarView", String.format("drawing rect: %f, %f, %f, %f",
                     contentRect.top,
                     contentRect.left,
                     contentRect.bottom,
                     contentRect.right));
-            canvas.drawRoundRect(contentRect, contentRadius, contentRadius, contentColor);
-            canvas.drawRoundRect(contentRect, contentRadius, contentRadius, contentStroke);
+            canvas.drawRoundRect(contentRect, contentRadiusPx, contentRadiusPx, contentColor);
+            canvas.drawRoundRect(contentRect, contentRadiusPx, contentRadiusPx, contentStroke);
+
+            // TODO: render text dynamically.
+            // TODO: fix this for RTL.
+            String text =
+                    "woahfeytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlol";
+            for (TextBreakPoint breakPoint :
+                    breakTextMultiline(text, contentRect, textColor, contentPaddingPx)) {
+                canvas.drawText(breakPoint.textLine, 0, breakPoint.textLine.length(),
+                        breakPoint.xPosition, breakPoint.yPosition, textColor);
+            }
         }
     }
 
@@ -211,34 +231,39 @@ public class CalendarView extends View {
         requestLayout();
     }
 
-    // Consider implementing onMeasure:
-    // https://developer.android.com/training/custom-views/custom-drawing#layouteevent
-
     public void setDividerStroke(@ColorInt int dividerStroke) {
         this.dividerStroke.setColor(dividerStroke);
         invalidate();
         requestLayout();
     }
 
-    public void setDividerStrokeWidth(float dividerStrokeWidth) {
-        this.dividerStrokeWidth = dividerStrokeWidth;
-        dividerStroke.setStrokeWidth(dividerStrokeWidth);
+    public void setDividerStrokeWidthDp(float dividerStrokeWidthDp) {
+        this.dividerStrokeWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                dividerStrokeWidthDp, getResources().getDisplayMetrics());
+        dividerStroke.setStrokeWidth(dividerStrokeWidthPx);
         invalidate();
         requestLayout();
     }
 
-    public void setDividerDashOnDistance(float dividerDashOnDistance) {
-        this.dividerDashOnDistance = dividerDashOnDistance;
+    // Consider implementing onMeasure:
+    // https://developer.android.com/training/custom-views/custom-drawing#layouteevent
+
+    public void setDividerDashOnDistanceDp(float dividerDashOnDistanceDp) {
+        this.dividerDashOnDistancePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                dividerDashOnDistanceDp, getResources().getDisplayMetrics());
         dividerStroke.setPathEffect(new DashPathEffect(
-                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
+                new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx},
+                calculateDashPhase()));
         invalidate();
         requestLayout();
     }
 
-    public void setDividerDashOffDistance(float dividerDashOffDistance) {
-        this.dividerDashOffDistance = dividerDashOffDistance;
+    public void setDividerDashOffDistanceDp(float dividerDashOffDistanceDp) {
+        this.dividerDashOffDistancePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                dividerDashOffDistanceDp, getResources().getDisplayMetrics());
         dividerStroke.setPathEffect(new DashPathEffect(
-                new float[]{dividerDashOnDistance, dividerDashOffDistance}, calculateDashPhase()));
+                new float[]{dividerDashOnDistancePx, dividerDashOffDistancePx},
+                calculateDashPhase()));
         invalidate();
         requestLayout();
     }
@@ -249,22 +274,66 @@ public class CalendarView extends View {
         requestLayout();
     }
 
-    public void setBackgroundRadius(float backgroundRadius) {
-        this.backgroundRadius = backgroundRadius;
+    public void setBackgroundRadiusDp(float backgroundRadiusDp) {
+        this.backgroundRadiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                backgroundRadiusDp, getResources().getDisplayMetrics());
         invalidate();
         requestLayout();
     }
 
-    public void setContentRadius(float contentRadius) {
-        this.contentRadius = contentRadius;
+    public void setContentRadiusDp(float contentRadiusDp) {
+        this.contentRadiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                contentRadiusDp, getResources().getDisplayMetrics());
         invalidate();
         requestLayout();
     }
 
-    public void setContentPadding(float contentPadding) {
-        this.contentPadding = contentPadding;
+    public void setContentPaddingDp(float contentPaddingDp) {
+        this.contentPaddingPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                contentPaddingDp, getResources().getDisplayMetrics());
         invalidate();
         requestLayout();
+    }
+
+    public void setTextColor(@ColorInt int textColor) {
+        this.textColor.setColor(textColor);
+        invalidate();
+        requestLayout();
+    }
+
+    public void setTextSizeSp(float textSizeSp) {
+        this.textSizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                textSizeSp, getResources().getDisplayMetrics());
+        textColor.setTextSize(textSizePx);
+        invalidate();
+        requestLayout();
+    }
+
+    private float calculateDashPhase() {
+        // TODO: figure out what exactly dash phase means, it seems to not work as advertised.
+        return containerRect.width() % (dividerDashOnDistancePx + dividerDashOffDistancePx) / 2;
+    }
+
+    private static List<TextBreakPoint> breakTextMultiline(
+            String text, RectF container, Paint textPaint, float textPaddingPx) {
+        com.google.common.base.Preconditions.checkArgument(
+                textPaint.getTextAlign() == Paint.Align.LEFT);
+        List<TextBreakPoint> breakPoints = new ArrayList<>();
+        StringBuilder textBuilder = new StringBuilder(text);
+
+        final float availableWidth = container.width() - 2 * textPaddingPx;
+        float currentYPositionInRect = container.top + textPaddingPx + textPaint.getTextSize();
+        while (textBuilder.length() > 0
+                && currentYPositionInRect < container.bottom - textPaddingPx) {
+            int textIndex = textPaint.breakText(textBuilder.toString(), 0, textBuilder.length(),
+                    true, availableWidth, null);
+            breakPoints.add(new TextBreakPoint(textBuilder.substring(0, textIndex),
+                    container.left + textPaddingPx, currentYPositionInRect));
+            textBuilder.delete(0, textIndex);
+            currentYPositionInRect += textPaint.getTextSize();
+        }
+
+        return breakPoints;
     }
 
     private void updateContentLayout() {
@@ -332,20 +401,20 @@ public class CalendarView extends View {
             }
 
             float pxHeightPerMillisecond =
-                    (containerRect.height() - 2 * contentPadding)
+                    (containerRect.height() - 2 * contentPaddingPx)
                             / (maxTimeMillis - minTimeMillis);
             float[] pxWidthPerNumOtherColumns = new float[columnsToRender];
             for (int i = 0; i < columnsToRender; i++) {
                 pxWidthPerNumOtherColumns[i] =
-                        (containerRect.width() - 2 * contentPadding - i * contentPadding)
+                        (containerRect.width() - 2 * contentPaddingPx - i * contentPaddingPx)
                                 / (i + 1);
             }
 
             for (FinalRep finalRep : finalRepresentations) {
-                float left = containerRect.left + contentPadding +
-                        (pxWidthPerNumOtherColumns[finalRep.numColumns - 1] + contentPadding) *
+                float left = containerRect.left + contentPaddingPx +
+                        (pxWidthPerNumOtherColumns[finalRep.numColumns - 1] + contentPaddingPx) *
                                 finalRep.columnPosition;
-                float top = containerRect.top + contentPadding +
+                float top = containerRect.top + contentPaddingPx +
                         pxHeightPerMillisecond * (finalRep.data.getStartTimeMillis() - minTimeMillis);
                 float right = left + pxWidthPerNumOtherColumns[finalRep.numColumns - 1];
                 float bottom = top +
@@ -364,7 +433,7 @@ public class CalendarView extends View {
             for (long seconds = firstDividerTime.toEpochSecond();
                  seconds < lastDividerTime.toEpochSecond();
                  seconds += TimeUnit.HOURS.toSeconds(1)) {
-                float yPosition = containerRect.top + contentPadding +
+                float yPosition = containerRect.top + contentPaddingPx +
                         pxHeightPerMillisecond * (TimeUnit.SECONDS.toMillis(seconds) - minTimeMillis);
                 newDividerLineYPositions.add(yPosition);
             }
@@ -372,6 +441,18 @@ public class CalendarView extends View {
         Log.d("CalendarView", Integer.toString(newContentRects.size()));
         this.contentRects = newContentRects;
         this.dividerLineYPositions = newDividerLineYPositions;
+    }
+
+    private static class TextBreakPoint {
+        final String textLine;
+        final float xPosition;
+        final float yPosition;
+
+        TextBreakPoint(String textLine, float xPosition, float yPosition) {
+            this.textLine = textLine;
+            this.xPosition = xPosition;
+            this.yPosition = yPosition;
+        }
     }
 
     private static class IntermediateRep {
