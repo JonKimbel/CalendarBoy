@@ -56,7 +56,7 @@ public class CalendarView extends View {
 
     // Calculated layout.
     private RectF containerRect;
-    private List<RectF> contentRects = new ArrayList<>();
+    private List<DrawableEvent> drawableEvents = new ArrayList<>();
     private List<Float> dividerLineYPositions = new ArrayList<>();
 
     // Input.
@@ -165,21 +165,21 @@ public class CalendarView extends View {
         }
         canvas.drawRoundRect(containerRect, backgroundRadiusPx, backgroundRadiusPx,
                 backgroundStroke);
-        for (RectF contentRect : contentRects) {
+        for (DrawableEvent drawableEvent : drawableEvents) {
             Log.d("CalendarView", String.format("drawing rect: %f, %f, %f, %f",
-                    contentRect.top,
-                    contentRect.left,
-                    contentRect.bottom,
-                    contentRect.right));
-            canvas.drawRoundRect(contentRect, contentRadiusPx, contentRadiusPx, contentColor);
-            canvas.drawRoundRect(contentRect, contentRadiusPx, contentRadiusPx, contentStroke);
+                    drawableEvent.rect.top,
+                    drawableEvent.rect.left,
+                    drawableEvent.rect.bottom,
+                    drawableEvent.rect.right));
+            canvas.drawRoundRect(drawableEvent.rect, contentRadiusPx, contentRadiusPx,
+                    contentColor);
+            canvas.drawRoundRect(drawableEvent.rect, contentRadiusPx, contentRadiusPx,
+                    contentStroke);
 
-            // TODO: render text dynamically.
             // TODO: fix this for RTL.
-            String text =
-                    "woahfeytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlolwoahheytheredudewhatsupnotmuchwhatisupwithyounottoomuchlol";
             for (TextBreakPoint breakPoint :
-                    breakTextMultiline(text, contentRect, textColor, contentPaddingPx)) {
+                    breakTextMultiline(drawableEvent.data.getTitle(), drawableEvent.rect,
+                            textColor, contentPaddingPx)) {
                 canvas.drawText(breakPoint.textLine, 0, breakPoint.textLine.length(),
                         breakPoint.xPosition, breakPoint.yPosition, textColor);
             }
@@ -337,7 +337,7 @@ public class CalendarView extends View {
     }
 
     private void updateContentLayout() {
-        List<RectF> newContentRects = new ArrayList<>();
+        List<DrawableEvent> newDrawableEvents = new ArrayList<>();
         List<Float> newDividerLineYPositions = new ArrayList<>();
         if (data.size() > 0) {
             long minTimeMillis = Math.max(data.get(0).getStartTimeMillis(), minTimeToDisplay);
@@ -420,7 +420,8 @@ public class CalendarView extends View {
                 float bottom = top +
                         pxHeightPerMillisecond *
                                 (finalRep.data.getEndTimeMillis() - finalRep.data.getStartTimeMillis());
-                newContentRects.add(new RectF(left, top, right, bottom));
+                newDrawableEvents.add(new DrawableEvent(new RectF(left, top, right, bottom),
+                        finalRep.data));
             }
 
             ZonedDateTime firstDividerTime =
@@ -438,8 +439,8 @@ public class CalendarView extends View {
                 newDividerLineYPositions.add(yPosition);
             }
         }
-        Log.d("CalendarView", Integer.toString(newContentRects.size()));
-        this.contentRects = newContentRects;
+        Log.d("CalendarView", Integer.toString(newDrawableEvents.size()));
+        this.drawableEvents = newDrawableEvents;
         this.dividerLineYPositions = newDividerLineYPositions;
     }
 
@@ -493,6 +494,16 @@ public class CalendarView extends View {
         FinalRep(Event data, int columnPosition) {
             this.data = data;
             this.columnPosition = columnPosition;
+        }
+    }
+
+    private static class DrawableEvent {
+        final RectF rect;
+        final Event data;
+
+        DrawableEvent(RectF rect, Event event) {
+            this.rect = rect;
+            this.data = event;
         }
     }
 }

@@ -14,6 +14,9 @@
         <attr name="contentStroke" format="color" />
         <attr name="contentRadius" format="dimension" />
         <attr name="contentPadding" format="dimension" />
+
+        <attr name="textFill" format="color" />
+        <attr name="textSize" format="dimension" />
     </declare-styleable>
 
     <color name="CalendarView_defaultBackgroundFill">#FFFFFF</color>
@@ -29,4 +32,7 @@
     <color name="CalendarView_defaultContentStroke">#55000000</color>
     <dimen name="CalendarView_defaultContentRadius">4dp</dimen>
     <dimen name="CalendarView_defaultContentPadding">8dp</dimen>
+
+    <color name="CalendarView_defaultTextFill">#FFEEEEEE</color>
+    <dimen name="CalendarView_defaultTextSize">16sp</dimen>
 </resources>
