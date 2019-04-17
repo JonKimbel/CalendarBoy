@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 
 public class EventDataController implements DataController<List<Event>> {
@@ -123,6 +124,7 @@ public class EventDataController implements DataController<List<Event>> {
                             formatter.format(endTime.getTime())));
             data.add(new Event(startTimeMillis, endTimeMillis, title));
         }
+        Collections.sort(data, Event::compare);
         return data;
     }
 }

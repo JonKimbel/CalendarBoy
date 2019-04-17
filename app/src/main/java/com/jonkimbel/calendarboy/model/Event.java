@@ -22,4 +22,22 @@ public class Event {
     public String getTitle() {
         return title;
     }
+
+    public static int compare(Event lh, Event rh) {
+        if (lh.startTimeMillis < rh.startTimeMillis) {
+            return -1;
+        }
+        if (lh.startTimeMillis > rh.startTimeMillis) {
+            return 1;
+        }
+        // Start times are equal.
+        if (lh.endTimeMillis < rh.endTimeMillis) {
+            return -1;
+        }
+        if (lh.endTimeMillis > rh.endTimeMillis) {
+            return 1;
+        }
+        // Start and end times are equal.
+        return 0;
+    }
 }
