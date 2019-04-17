@@ -16,7 +16,7 @@
             android:name=".input.calendar.CalendarSelectionActivity"
             android:label="@string/title_activity_calendar_selection"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.jonkimbel.calendarboy.MainActivity" />

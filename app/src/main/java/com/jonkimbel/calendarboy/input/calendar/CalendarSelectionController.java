@@ -1,11 +1,10 @@
-package com.jonkimbel.calendarboy.input;
+package com.jonkimbel.calendarboy.input.calendar;
 
 import android.app.Activity;
 import android.content.Intent;
 
 import com.jonkimbel.calendarboy.input.api.SelectionController;
-import com.jonkimbel.calendarboy.input.calendar.CalendarSelectionActivity;
-import com.jonkimbel.calendarboy.input.concurrent.UiThreadExecutor;
+import com.jonkimbel.calendarboy.concurrent.UiThreadExecutor;
 
 import androidx.annotation.GuardedBy;
 import androidx.core.app.ActivityCompat;

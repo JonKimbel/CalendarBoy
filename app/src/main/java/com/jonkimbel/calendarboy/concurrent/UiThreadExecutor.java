@@ -1,4 +1,4 @@
-package com.jonkimbel.calendarboy.input.concurrent;
+package com.jonkimbel.calendarboy.concurrent;
 
 import android.os.Handler;
 import android.os.Looper;

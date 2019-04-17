@@ -7,7 +7,7 @@ import android.os.Build;
 
 import com.jonkimbel.calendarboy.R;
 import com.jonkimbel.calendarboy.input.api.SelectionController;
-import com.jonkimbel.calendarboy.input.concurrent.UiThreadExecutor;
+import com.jonkimbel.calendarboy.concurrent.UiThreadExecutor;
 
 import androidx.annotation.GuardedBy;
 import androidx.core.app.ActivityCompat;

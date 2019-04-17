@@ -208,6 +208,7 @@ public class CalendarView extends View {
                     contentStroke);
 
             // TODO: fix this for RTL.
+            // TODO: do this in the layout step, not the draw step.
             for (TextBreakPoint breakPoint :
                     breakTextMultiline(drawableEvent.data.getTitle(), drawableEvent.rect,
                             textColor, contentPaddingPx)) {

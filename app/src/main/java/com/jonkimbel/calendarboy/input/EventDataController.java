@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.jonkimbel.calendarboy.input.calendar.CalendarSelectionController;
 import com.jonkimbel.calendarboy.model.Event;
 
 import java.text.DateFormat;
@@ -23,7 +24,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
-public class EventDataController implements DataController<List<Event>> {
+public class EventDataController {
     public static final String[] INSTANCE_PROJECTION = new String[]{
             Instances.BEGIN,         // 0
             Instances.END,           // 1
@@ -50,7 +51,6 @@ public class EventDataController implements DataController<List<Event>> {
         this.contentResolver = contentResolver;
     }
 
-    @Override
     public ListenableFuture<List<Event>> getData() {
         SettableFuture<List<Event>> dataAvailableFuture = SettableFuture.create();
         accountSelectionController.getSelectionThenRun((accountName, accountType) -> {
